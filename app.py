@@ -3,7 +3,6 @@ import os
 
 import streamlit as st
 from PIL import Image
-from dotenv import load_dotenv
 
 from ai_agent import sales_chat
 from payments import create_checkout
@@ -16,15 +15,10 @@ st.set_page_config(
     page_icon="🤖",
     layout="centered"
 )
-
 # =============================
-# LOAD ENV VARIABLES
+# LOAD ENV / SECRETS
 # =============================
-# Local .env (only for local runs)
-load_dotenv()
-
-# Prefer Streamlit Secrets (Cloud), fallback to .env (Local)
-PROMPT_PACK_LINK = st.secrets.get("PROMPT_PACK_LINK", os.getenv("PROMPT_PACK_LINK", "")).strip()
+PROMPT_PACK_LINK = st.secrets.get("PROMPT_PACK_LINK", "").strip()
 
 # =============================
 # SUCCESS / CANCEL HANDLING
