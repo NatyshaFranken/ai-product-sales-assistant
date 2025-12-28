@@ -20,9 +20,11 @@ st.set_page_config(
 # =============================
 # LOAD ENV VARIABLES
 # =============================
+# Local .env (only for local runs)
 load_dotenv()
 
-PROMPT_PACK_LINK = os.getenv("PROMPT_PACK_LINK", "").strip()
+# Prefer Streamlit Secrets (Cloud), fallback to .env (Local)
+PROMPT_PACK_LINK = st.secrets.get("PROMPT_PACK_LINK", os.getenv("PROMPT_PACK_LINK", "")).strip()
 
 # =============================
 # SUCCESS / CANCEL HANDLING
