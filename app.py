@@ -117,17 +117,12 @@ st.subheader("🔥 Buy Now")
 st.markdown("### 🔥 Buy once. Use forever.")
 
 if st.button("Buy AI Prompt Mega Pack for Beginners"):
-    st.write("✅ Button clicked (debug)")
-
     try:
         checkout_url = create_checkout("prompt_pack")
-        st.write("✅ Checkout URL created:", checkout_url)
-
         st.success("✅ Redirecting you to secure Stripe checkout...")
         st.link_button("👉 Continue to Stripe Checkout", checkout_url)
         st.stop()
-
     except Exception as e:
-        st.error("❌ Stripe checkout failed. Here is the exact error:")
+        st.error("❌ Stripe checkout failed. This is the exact error:")
         st.exception(e)
         st.stop()
