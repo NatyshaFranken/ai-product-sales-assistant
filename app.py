@@ -7,6 +7,9 @@ from PIL import Image
 from ai_agent import sales_chat
 from payments import create_checkout
 
+import stripe
+from emailer import send_download_email
+
 # =============================
 # PAGE CONFIG (MUST BE FIRST)
 # =============================
@@ -24,21 +27,49 @@ PROMPT_PACK_LINK = st.secrets.get("PROMPT_PACK_LINK", "").strip()
 # SUCCESS / CANCEL HANDLING
 # =============================
 query = st.query_params
+query = st.query_params
 
 if "success" in query:
     st.success("✅ Payment received! Your download is ready.")
     st.markdown("### 🎁 Download your pack")
 
-    if PROMPT_PACK_LINK:
-        st.markdown(f"👉 [Download here]({PROMPT_PACK_LINK})")
+    download_link = st.secrets.get("PROMPT_PACK_LINK", "").strip()
+
+    # Show download link on page
+    if download_link:
+        st.markdown(f"👉 [Download here]({download_link})")
     else:
         st.warning("Download link not configured.")
 
+    # --- AUTO EMAIL DELIVERY (Backup) ---
+    session_id = query.get("session_id", "")
+    if session_id and download_link:
+        # prevent duplicate emails on rerun/refresh
+        flag_key = f"email_sent_{session_id}"
+        if not st.session_state.get(flag_key, False):
+            try:
+                # Stripe API key should already be set in payments.py,
+                # but we set it again defensively here:
+                stripe.api_key = st.secrets.get("STRIPE_SECRET_KEY", "")
+
+                session = stripe.checkout.Session.retrieve(session_id)
+                customer_email = ""
+                if session and session.get("customer_details"):
+                    customer_email = session["customer_details"].get("email", "") or ""
+
+                if customer_email:
+                    send_download_email(customer_email, download_link)
+                    st.session_state[flag_key] = True
+                    st.info(f"📩 Download link emailed to: {customer_email}")
+                else:
+                    st.warning("Could not read customer email from Stripe (email not sent).")
+
+            except Exception as e:
+                st.warning("⚠️ Payment succeeded, but email delivery failed.")
+                st.exception(e)
+
     st.caption("If the link doesn’t open, check your email.")
     st.stop()
-
-if "canceled" in query:
-    st.warning("Payment canceled. You can try again anytime.")
 
 # =============================
 # STYLING (SAFE CSS)
