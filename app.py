@@ -1,14 +1,13 @@
 from pathlib import Path
-import os
 
 import streamlit as st
-from PIL import Image
 
 from ai_agent import sales_chat
 from payments import create_checkout
 
 import stripe
 from emailer import send_download_email
+from resend import find_latest_paid_session_by_email
 
 # =============================
 # PAGE CONFIG (MUST BE FIRST)
@@ -171,3 +170,40 @@ if st.button("Buy AI Prompt Mega Pack for Beginners"):
         st.error("❌ Stripe checkout failed. This is the exact error:")
         st.exception(e)
         st.stop()
+
+st.markdown("---")
+st.markdown("## 📩 Resend your download link")
+
+st.caption("If you purchased but didn’t receive the email, enter the same email used at checkout.")
+
+# Basic rate limit (per browser session)
+if "resend_attempts" not in st.session_state:
+    st.session_state.resend_attempts = 0
+
+# Same generic message always (prevents email enumeration)
+generic_msg = (
+    "If a paid order is found for this email, we will send your download link shortly. "
+    "Please check your inbox and spam folder."
+)
+
+with st.form("resend_form"):
+    resend_email = st.text_input("Email used at checkout", placeholder="name@example.com")
+    submitted = st.form_submit_button("Resend download email")
+
+if submitted:
+    st.session_state.resend_attempts += 1
+
+    if st.session_state.resend_attempts > 5:
+        st.error("Too many attempts. Please wait a bit and try again.")
+    else:
+        email_clean = (resend_email or "").strip().lower()
+        download_link = st.secrets.get("PROMPT_PACK_LINK", "").strip()
+
+        # If misconfigured, tell YOU (admin) but still be kind to customers
+        if not download_link:
+            st.warning("Delivery link is temporarily unavailable. Please contact support.")
+            st.stop()
+
+        # If empty email, do not query Stripe
+        if not email_clean:
+            st.success(generic_msg)
