@@ -26,64 +26,38 @@ PROMPT_PACK_LINK = st.secrets.get("PROMPT_PACK_LINK", "").strip()
 # SUCCESS / CANCEL HANDLING
 # =============================
 query = st.query_params
-query = st.query_params
 
 if "success" in query:
     st.success("✅ Payment received! Your download is ready.")
     st.markdown("### 🎁 Download your pack")
 
+    session_id = query.get("session_id", "")
     download_link = st.secrets.get("PROMPT_PACK_LINK", "").strip()
 
-    # Show download link on page
+    # Optional: send email if you have emailer + Stripe lookup
+    try:
+        # Only run if session_id exists and you have email sending enabled
+        if session_id and download_link:
+            # If you have a function to get the customer email from Stripe:
+            # customer_email = get_customer_email_from_session(session_id)
+            # if customer_email:
+            #     send_download_email(customer_email, download_link)
+            pass
+    except Exception as e:
+        # Don't crash the app if email fails
+        st.warning("Email delivery failed, but your download is still available here.")
+        st.exception(e)
+
     if download_link:
         st.markdown(f"👉 [Download here]({download_link})")
     else:
         st.warning("Download link not configured.")
 
-    # --- AUTO EMAIL DELIVERY (Backup) ---
-    session_id = query.get("session_id", "")
-    if session_id and download_link:
-        # prevent duplicate emails on rerun/refresh
-        flag_key = f"email_sent_{session_id}"
-        if not st.session_state.get(flag_key, False):
-            try:
-                # Stripe API key should already be set in payments.py,
-                # but we set it again defensively here:
-                stripe.api_key = st.secrets.get("STRIPE_SECRET_KEY", "")
-
-                session = stripe.checkout.Session.retrieve(session_id)
-                customer_email = ""
-                # --- RESEND DOWNLOAD EMAIL (Customer Self-Serve) ---
-    if session_id and download_link and customer_email:
-        st.markdown("---")
-        st.markdown("### 📩 Didn’t receive the email?")
-
-        # Resend to same email
-        if st.button("Resend download email to the same address"):
-            try:
-                send_download_email(customer_email, download_link)
-                st.success(f"✅ Resent to {customer_email}")
-            except Exception as e:
-                st.error("❌ Could not resend email.")
-                st.exception(e)
-
-        # Optional: send to a different email address
-        with st.expander("Send to a different email address"):
-            new_email = st.text_input("Enter the email address to send to")
-            if st.button("Send download email"):
-                if not new_email.strip():
-                    st.warning("Please enter an email address.")
-                else:
-                    try:
-                        send_download_email(new_email.strip(), download_link)
-                        st.success(f"✅ Sent to {new_email.strip()}")
-                    except Exception as e:
-                        st.error("❌ Could not send email.")
-                        st.exception(e)
-
-    st.caption("If the link doesn’t open, check your email.")
+    st.caption("If the link doesn’t open, check your email/spam.")
     st.stop()
 
+if "canceled" in query:
+    st.warning("Payment canceled. You can try again anytime.")
 # =============================
 # STYLING (SAFE CSS)
 # =============================
