@@ -54,19 +54,33 @@ if "success" in query:
 
                 session = stripe.checkout.Session.retrieve(session_id)
                 customer_email = ""
-                if session and session.get("customer_details"):
-                    customer_email = session["customer_details"].get("email", "") or ""
+                # --- RESEND DOWNLOAD EMAIL (Customer Self-Serve) ---
+    if session_id and download_link and customer_email:
+        st.markdown("---")
+        st.markdown("### 📩 Didn’t receive the email?")
 
-                if customer_email:
-                    send_download_email(customer_email, download_link)
-                    st.session_state[flag_key] = True
-                    st.info(f"📩 Download link emailed to: {customer_email}")
-                else:
-                    st.warning("Could not read customer email from Stripe (email not sent).")
-
+        # Resend to same email
+        if st.button("Resend download email to the same address"):
+            try:
+                send_download_email(customer_email, download_link)
+                st.success(f"✅ Resent to {customer_email}")
             except Exception as e:
-                st.warning("⚠️ Payment succeeded, but email delivery failed.")
+                st.error("❌ Could not resend email.")
                 st.exception(e)
+
+        # Optional: send to a different email address
+        with st.expander("Send to a different email address"):
+            new_email = st.text_input("Enter the email address to send to")
+            if st.button("Send download email"):
+                if not new_email.strip():
+                    st.warning("Please enter an email address.")
+                else:
+                    try:
+                        send_download_email(new_email.strip(), download_link)
+                        st.success(f"✅ Sent to {new_email.strip()}")
+                    except Exception as e:
+                        st.error("❌ Could not send email.")
+                        st.exception(e)
 
     st.caption("If the link doesn’t open, check your email.")
     st.stop()
