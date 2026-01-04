@@ -31,33 +31,25 @@ if "success" in query:
     st.success("✅ Payment received! Your download is ready.")
     st.markdown("### 🎁 Download your pack")
 
-    session_id = query.get("session_id", "")
     download_link = st.secrets.get("PROMPT_PACK_LINK", "").strip()
 
-    # Optional: send email if you have emailer + Stripe lookup
-    try:
-        # Only run if session_id exists and you have email sending enabled
-        if session_id and download_link:
-            # If you have a function to get the customer email from Stripe:
-            # customer_email = get_customer_email_from_session(session_id)
-            # if customer_email:
-            #     send_download_email(customer_email, download_link)
-            pass
-    except Exception as e:
-        # Don't crash the app if email fails
-        st.warning("Email delivery failed, but your download is still available here.")
-        st.exception(e)
-
     if download_link:
-        st.markdown(f"👉 [Download here]({download_link})")
+        st.link_button("⬇️ Download the full package", download_link)
+        st.caption("If the download doesn’t start, open the link in a new tab or check your email/spam.")
     else:
-        st.warning("Download link not configured.")
+        st.warning("Download link not configured. Please contact support: igmargfranken@gmail.com")
 
-    st.caption("If the link doesn’t open, check your email/spam.")
+    st.markdown("---")
+    st.markdown("### 🚀 Want the Advanced version?")
+    st.markdown("Upgrade for premium templates, funnels, and launch systems.")
+
+    # OPTIONAL: Put your Beacons Advanced product link here
+    ADVANCED_UPSELL_URL = st.secrets.get("ADVANCED_UPSELL_URL", "").strip()
+    if ADVANCED_UPSELL_URL:
+        st.link_button("Upgrade to Advanced ($59)", ADVANCED_UPSELL_URL)
+
     st.stop()
 
-if "canceled" in query:
-    st.warning("Payment canceled. You can try again anytime.")
 # =============================
 # STYLING (SAFE CSS)
 # =============================
